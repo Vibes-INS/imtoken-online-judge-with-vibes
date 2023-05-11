@@ -1,22 +1,15 @@
 'use client'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useAccount, useNetwork } from 'wagmi'
-import { ethers } from 'ethers'
+import { useAccount } from 'wagmi'
+import { useProvider } from '@/hooks/useProvider'
 
 export const Home = () => {
   const [address, setAddress] = useState('')
   const [nonce, setNonce] = useState('')
 
   const account = useAccount()
-  const network = useNetwork()
-  const provider = useMemo(
-    () =>
-      window.ethereum
-        ? new ethers.providers.Web3Provider(window.ethereum as any)
-        : null,
-    [network.chain?.id, account.address]
-  )
+  const provider = useProvider()
   const signer = useMemo(() => provider?.getSigner(), [provider])
 
   useEffect(() => {
