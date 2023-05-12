@@ -22,6 +22,9 @@ export const Home = () => {
   const [address, setAddress] = useState('')
   const [nonce, setNonce] = useState(0)
   const [amount, setAmount] = useState('')
+  const [gasLimit, setGasLimit] = useState(21000)
+  const [maxFeePerGas, setMaxFeePerGas] = useState(0)
+  const [maxPriorityFeePerGas, setMaxPriorityFeePerGas] = useState(0)
 
   const account = useAccount()
   const provider = useProvider()
@@ -49,6 +52,9 @@ export const Home = () => {
       to: string,
       options?: {
         amount?: string
+        gasLimit?: number
+        maxFeePerGas?: number
+        maxPriorityFeePerGas?: number
       }
     ) => {
       if (!signer || !provider) return
@@ -56,20 +62,33 @@ export const Home = () => {
       if (!to) return
       try {
         setIsSubmitting(true)
+
         const value = options?.amount
-          ? ethers.utils.parseEther(options.amount)
+          ? ethers.utils.parseUnits(options.amount, 'ether')
           : undefined
-        const gasLimit = await provider.estimateGas({
-          from: signer.getAddress(),
-          to,
-          nonce: n,
-          value,
-        })
+        const transactionOptions = {
+          maxFeePerGas: options?.maxFeePerGas
+            ? ethers.utils.parseUnits(`${options.maxFeePerGas}`, 'gwei')
+            : undefined,
+          maxPriorityFeePerGas: options?.maxPriorityFeePerGas
+            ? ethers.utils.parseUnits(`${options.maxPriorityFeePerGas}`, 'gwei')
+            : undefined,
+        }
+        const gasLimit = options?.gasLimit
+          ? options.gasLimit
+          : await provider.estimateGas({
+              from: signer.getAddress(),
+              to,
+              nonce: n,
+              value,
+              ...transactionOptions,
+            })
         const tx = await signer.sendTransaction({
           to,
           nonce: n,
           value,
           gasLimit,
+          ...transactionOptions,
         })
         const receipt = await tx.wait()
         setIsOpen(true)
@@ -111,7 +130,7 @@ export const Home = () => {
         <ConnectButton />
       </nav>
       <main className="flex items-center sm:pt-20 pt-10 flex-col w-full flex-1">
-        <div className="flex flex-col gap-4 w-full max-w-[375px] px-4">
+        <div className="flex flex-col gap-6 w-full max-w-[375px] px-4 relative">
           {isClient && network.chain?.id === goerli.id ? (
             <div>
               <a
@@ -125,7 +144,9 @@ export const Home = () => {
           ) : null}
 
           <div>
-            <Label isRequired>Address</Label>
+            <Label htmlFor="address-input" isRequired>
+              Address
+            </Label>
             <textarea
               id="address-input"
               className="border rounded py-2 px-4 w-full resize-none h-[70px]"
@@ -140,7 +161,9 @@ export const Home = () => {
             ) : null}
           </div>
           <div>
-            <Label isRequired>Nonce</Label>
+            <Label htmlFor="nonce-input" isRequired>
+              Nonce
+            </Label>
             <input
               id="nonce-input"
               type="number"
@@ -151,12 +174,12 @@ export const Home = () => {
             />
           </div>
           <div>
-            <Label>Amount</Label>
+            <Label htmlFor="nonce-input">Amount (unit: Ether)</Label>
             <input
               id="nonce-input"
               type="text"
               className="border rounded py-2 px-4 w-full"
-              placeholder="Amount of Ether"
+              placeholder="Amount"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
@@ -164,11 +187,55 @@ export const Home = () => {
               <FormErrorMessage>This is not a valid number</FormErrorMessage>
             ) : null}
           </div>
-          <div className="flex justify-end">
+          <div>
+            <Label htmlFor="max-fee-per-gas-input">GasLimit</Label>
+            <input
+              id="max-fee-per-gas-input"
+              type="number"
+              className="border rounded py-2 px-4 w-full"
+              placeholder="GasLimit"
+              value={gasLimit}
+              onChange={(e) => setGasLimit(Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="max-fee-per-gas-input">
+              MaxFeePerGas (unit: Gwei)
+            </Label>
+            <input
+              id="max-fee-per-gas-input"
+              type="number"
+              className="border rounded py-2 px-4 w-full"
+              placeholder="MaxFeePerGas"
+              value={maxFeePerGas}
+              onChange={(e) => setMaxFeePerGas(Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="max-priority-fee-gas-input">
+              MaxPriorityFeePerGas (unit: Gwei)
+            </Label>
+            <input
+              id="max-priority-fee-gas-input"
+              type="number"
+              className="border rounded py-2 px-4 w-full"
+              placeholder="MaxPriorityFeePerGas"
+              value={maxPriorityFeePerGas}
+              onChange={(e) => setMaxPriorityFeePerGas(Number(e.target.value))}
+            />
+          </div>
+          <div className="flex justify-end sticky bottom-0 bg-white pb-4">
             <button
               className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 w-full"
               disabled={!address || !nonce || isSubmitting}
-              onClick={() => onSubmit(nonce, address, { amount })}
+              onClick={() =>
+                onSubmit(nonce, address, {
+                  amount,
+                  maxFeePerGas,
+                  maxPriorityFeePerGas,
+                  gasLimit,
+                })
+              }
             >
               {isSubmitting ? 'Submitting' : 'Submit'}
             </button>
