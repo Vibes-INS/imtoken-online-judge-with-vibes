@@ -1,12 +1,21 @@
 'use client'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { goerli, useAccount, useNetwork } from 'wagmi'
 import { useProvider } from '@/hooks/useProvider'
 import { GOERLI_FAUCET_URL } from '@/constants'
 import { useIsClient } from '@/hooks/useIsClient'
 import { Label } from '@/components/Form/Label'
 import { ethers } from 'ethers'
+import {
+  Dialog,
+  DialogCloseButton,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogOverlay,
+  DialogStatusIcon,
+} from '@/components/Dialog'
 
 export const Home = () => {
   const [address, setAddress] = useState('')
@@ -19,6 +28,14 @@ export const Home = () => {
   const network = useNetwork()
   const isClient = useIsClient()
   const signer = useMemo(() => provider?.getSigner(), [provider])
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+  const [dialogInfo, setDialogInfo] = useState<{
+    title: ReactNode
+    description: ReactNode
+    status: 'success' | 'error'
+  } | null>()
 
   useEffect(() => {
     if (account.address && provider) {
@@ -40,6 +57,7 @@ export const Home = () => {
       if (!n) return
       if (!to) return
       try {
+        setIsSubmitting(true)
         const value = options?.amount
           ? ethers.utils.parseEther(options.amount)
           : undefined
@@ -56,21 +74,46 @@ export const Home = () => {
           gasLimit,
         })
         const receipt = await tx.wait()
+        setIsOpen(true)
+        setDialogInfo({
+          status: 'success',
+          title: 'Successfully sent transaction',
+          description: (
+            <>
+              Click to view explorer{' '}
+              <a
+                className="underline text-blue-600"
+                href={`${network.chain?.blockExplorers?.default.url}/tx/${receipt.transactionHash}`}
+                target="_blank"
+              >
+                details
+              </a>
+            </>
+          ),
+        })
         console.log(receipt)
-      } catch (error) {
+      } catch (error: any) {
+        setIsOpen(true)
+        setDialogInfo({
+          status: 'error',
+          title: 'Error',
+          description: error.message,
+        })
         console.error(error)
       }
+      setIsSubmitting(false)
     },
-    [provider, signer]
+    [network.chain?.blockExplorers?.default.url, provider, signer]
   )
 
   return (
     <div className="w-full h-screen flex flex-col">
-      <nav className="flex px-8 py-3 shadow-md bg-white">
+      <nav className="flex px-8 py-3 shadow-md bg-white justify-between items-center sm:flex-row flex-col gap-2 sm:gap-0">
+        <h3 className="text-lg font-bold">imToken Online Judge</h3>
         <ConnectButton />
       </nav>
-      <main className="flex items-center pt-20 flex-col w-full flex-1">
-        <div className="flex flex-col gap-4 w-[300px]">
+      <main className="flex items-center sm:pt-20 pt-10 flex-col w-full flex-1">
+        <div className="flex flex-col gap-4 w-full max-w-[375px] px-4">
           {isClient && network.chain?.id === goerli.id ? (
             <div>
               <a
@@ -84,16 +127,17 @@ export const Home = () => {
           ) : null}
 
           <div>
-            <Label>*Address</Label>
+            <Label isRequired>Address</Label>
             <textarea
               id="address-input"
               className="border rounded py-2 px-4 w-full resize-none h-[70px]"
+              placeholder="Address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
           </div>
           <div>
-            <Label>*Nonce</Label>
+            <Label isRequired>Nonce</Label>
             <input
               id="nonce-input"
               type="text"
@@ -124,15 +168,28 @@ export const Home = () => {
           ) : null}
           <div className="flex justify-end">
             <button
-              className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-              disabled={!address || !nonce}
+              className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 w-full"
+              disabled={!address || !nonce || isSubmitting}
               onClick={() => onSubmit(nonce, address, { amount })}
             >
-              Submit
+              {isSubmitting ? 'Submitting' : 'Submit'}
             </button>
           </div>
         </div>
       </main>
+      <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <DialogOverlay />
+        <DialogContent>
+          <DialogCloseButton />
+          {dialogInfo ? (
+            <div className="py-6 px-6 text-center flex h-full flex-col">
+              <DialogStatusIcon status={dialogInfo.status} />
+              <DialogHeader>{dialogInfo.title}</DialogHeader>
+              <DialogDescription>{dialogInfo.description}</DialogDescription>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
