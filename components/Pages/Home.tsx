@@ -16,13 +16,12 @@ import {
   DialogOverlay,
   DialogStatusIcon,
 } from '@/components/Dialog'
-import { isPrimitiveEthAddress, isValidNonce } from '@/libs/utils'
+import { isPrimitiveEthAddress, isValidNumber } from '@/libs/utils'
 
 export const Home = () => {
   const [address, setAddress] = useState('')
-  const [nonce, setNonce] = useState('')
+  const [nonce, setNonce] = useState(0)
   const [amount, setAmount] = useState('')
-  const [isShowMoreOptions, setIsShowMoreOptions] = useState(false)
 
   const account = useAccount()
   const provider = useProvider()
@@ -40,15 +39,13 @@ export const Home = () => {
 
   useEffect(() => {
     if (account.address && provider) {
-      provider
-        .getTransactionCount(account.address)
-        .then((r) => setNonce(`${r}`))
+      provider.getTransactionCount(account.address).then((r) => setNonce(r))
     }
   }, [account.address, provider])
 
   const onSubmit = useCallback(
     async (
-      n: string,
+      n: number,
       to: string,
       options?: {
         amount?: string
@@ -146,35 +143,27 @@ export const Home = () => {
             <Label isRequired>Nonce</Label>
             <input
               id="nonce-input"
-              type="text"
+              type="number"
               className="border rounded py-2 px-4 w-full"
               value={nonce}
               placeholder="Nonce"
-              onChange={(e) => setNonce(e.target.value)}
+              onChange={(e) => setNonce(Number(e.target.value) || 0)}
             />
-            {nonce !== '' && !isValidNonce(nonce) ? (
-              <FormErrorMessage>Invalid Nonce</FormErrorMessage>
+          </div>
+          <div>
+            <Label>Amount</Label>
+            <input
+              id="nonce-input"
+              type="text"
+              className="border rounded py-2 px-4 w-full"
+              placeholder="Amount of Ether"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            {amount !== '' && !isValidNumber(amount) ? (
+              <FormErrorMessage>This is not a valid number</FormErrorMessage>
             ) : null}
           </div>
-          <button
-            onClick={() => setIsShowMoreOptions((s) => !s)}
-            className="underline text-blue-600 mr-auto"
-          >
-            {isShowMoreOptions ? '📂' : '📁'}Options
-          </button>
-          {isShowMoreOptions ? (
-            <div>
-              <Label>Amount</Label>
-              <input
-                id="nonce-input"
-                type="text"
-                className="border rounded py-2 px-4 w-full"
-                placeholder="Amount of Ether"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </div>
-          ) : null}
           <div className="flex justify-end">
             <button
               className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 w-full"

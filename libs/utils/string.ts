@@ -1,3 +1,3 @@
-export const isValidNonce = (value: string) => {
+export function isValidNumber(value: string): boolean {
   return !isNaN(Number(value))
 }
