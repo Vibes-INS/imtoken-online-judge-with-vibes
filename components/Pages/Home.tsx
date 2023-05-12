@@ -5,7 +5,7 @@ import { goerli, useAccount, useNetwork } from 'wagmi'
 import { useProvider } from '@/hooks/useProvider'
 import { GOERLI_FAUCET_URL } from '@/constants'
 import { useIsClient } from '@/hooks/useIsClient'
-import { Label } from '@/components/Form/Label'
+import { Label, FormErrorMessage } from '@/components/Form'
 import { ethers } from 'ethers'
 import {
   Dialog,
@@ -16,6 +16,7 @@ import {
   DialogOverlay,
   DialogStatusIcon,
 } from '@/components/Dialog'
+import { isPrimitiveEthAddress, isValidNonce } from '@/libs/utils'
 
 export const Home = () => {
   const [address, setAddress] = useState('')
@@ -135,6 +136,11 @@ export const Home = () => {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
+            {address !== '' && !isPrimitiveEthAddress(address) ? (
+              <FormErrorMessage>
+                This is not the correct Ethereum address
+              </FormErrorMessage>
+            ) : null}
           </div>
           <div>
             <Label isRequired>Nonce</Label>
@@ -146,6 +152,9 @@ export const Home = () => {
               placeholder="Nonce"
               onChange={(e) => setNonce(e.target.value)}
             />
+            {nonce !== '' && !isValidNonce(nonce) ? (
+              <FormErrorMessage>Invalid Nonce</FormErrorMessage>
+            ) : null}
           </div>
           <button
             onClick={() => setIsShowMoreOptions((s) => !s)}

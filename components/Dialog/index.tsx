@@ -56,7 +56,7 @@ export const DialogOverlay: React.FC = () => {
   const { onClose } = useContext(DialogContext)
   return (
     <div
-      className="absolute top-0 left-0 w-full h-full bg-black opacity-20"
+      className="fixed top-0 left-0 w-full h-full bg-black opacity-20"
       onClick={onClose}
     />
   )
@@ -65,7 +65,7 @@ export const DialogOverlay: React.FC = () => {
 export const DialogCloseButton: React.FC = () => {
   const { onClose } = useContext(DialogContext)
   return (
-    <button onClick={onClose} className="absolute top-4 right-4">
+    <button onClick={onClose} className="absolute top-4 right-4 select-none">
       Close
     </button>
   )
@@ -86,7 +86,7 @@ export const DialogHeader: React.FC<PropsWithChildren> = ({ children }) => {
 export const DialogDescription: React.FC<PropsWithChildren> = ({
   children,
 }) => {
-  return <p className="text-center mb-auto">{children}</p>
+  return <p className="text-center mb-auto w-full overflow-auto">{children}</p>
 }
 
 export interface DialogStatusIconProps {
