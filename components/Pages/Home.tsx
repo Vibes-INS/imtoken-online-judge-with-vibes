@@ -40,11 +40,14 @@ export const Home = () => {
     status: 'success' | 'error'
   } | null>()
 
-  useEffect(() => {
-    if (account.address && provider) {
-      provider.getTransactionCount(account.address).then((r) => setNonce(r))
-    }
+  const setLatestNonce = useCallback(() => {
+    if (!account.address || !provider) return
+    provider.getTransactionCount(account.address).then((r) => setNonce(r))
   }, [account.address, provider])
+
+  useEffect(() => {
+    setLatestNonce()
+  }, [account.address, provider, setLatestNonce])
 
   const onSubmit = useCallback(
     async (
@@ -62,7 +65,6 @@ export const Home = () => {
       if (!to) return
       try {
         setIsSubmitting(true)
-
         const value = options?.amount
           ? ethers.utils.parseUnits(options.amount, 'ether')
           : undefined
@@ -91,6 +93,7 @@ export const Home = () => {
           ...transactionOptions,
         })
         const receipt = await tx.wait()
+        setLatestNonce()
         setIsOpen(true)
         setDialogInfo({
           status: 'success',
@@ -120,7 +123,12 @@ export const Home = () => {
       }
       setIsSubmitting(false)
     },
-    [network.chain?.blockExplorers?.default.url, provider, signer]
+    [
+      network.chain?.blockExplorers?.default.url,
+      provider,
+      setLatestNonce,
+      signer,
+    ]
   )
 
   const isValidAddress = isPrimitiveEthAddress(address)
