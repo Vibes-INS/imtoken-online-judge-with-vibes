@@ -123,6 +123,9 @@ export const Home = () => {
     [network.chain?.blockExplorers?.default.url, provider, signer]
   )
 
+  const isValidAddress = isPrimitiveEthAddress(address)
+  const isValidNonce = isValidNumber(amount)
+
   return (
     <div className="w-full h-screen flex flex-col">
       <nav className="flex px-8 py-3 shadow-md bg-white justify-between items-center sm:flex-row flex-col gap-2 sm:gap-0">
@@ -154,7 +157,7 @@ export const Home = () => {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
-            {address !== '' && !isPrimitiveEthAddress(address) ? (
+            {address !== '' && !isValidAddress ? (
               <FormErrorMessage>
                 This is not the correct Ethereum address
               </FormErrorMessage>
@@ -183,7 +186,7 @@ export const Home = () => {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
-            {amount !== '' && !isValidNumber(amount) ? (
+            {amount !== '' && !isValidNonce ? (
               <FormErrorMessage>This is not a valid number</FormErrorMessage>
             ) : null}
           </div>
@@ -199,9 +202,7 @@ export const Home = () => {
             />
           </div>
           <div>
-            <Label htmlFor="max-fee-per-gas-input">
-              MaxFeePerGas (unit: Gwei)
-            </Label>
+            <Label htmlFor="max-fee-per-gas-input">MaxFeePerGas</Label>
             <input
               id="max-fee-per-gas-input"
               type="number"
@@ -213,7 +214,7 @@ export const Home = () => {
           </div>
           <div>
             <Label htmlFor="max-priority-fee-gas-input">
-              MaxPriorityFeePerGas (unit: Gwei)
+              MaxPriorityFeePerGas
             </Label>
             <input
               id="max-priority-fee-gas-input"
@@ -227,7 +228,13 @@ export const Home = () => {
           <div className="flex justify-end sticky bottom-0 bg-white pb-4">
             <button
               className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 w-full"
-              disabled={!address || !nonce || isSubmitting}
+              disabled={
+                !address ||
+                !nonce ||
+                isSubmitting ||
+                !isValidAddress ||
+                !isValidNonce
+              }
               onClick={() =>
                 onSubmit(nonce, address, {
                   amount,
