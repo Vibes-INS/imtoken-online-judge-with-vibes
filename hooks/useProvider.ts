@@ -10,8 +10,16 @@ export function useProvider() {
   return useMemo(
     () =>
       isClient && window.ethereum
-        ? new ethers.providers.Web3Provider(window.ethereum as any)
+        ? new ethers.providers.Web3Provider(
+            window.ethereum as any,
+            network.chain
+              ? {
+                  name: network.chain?.name,
+                  chainId: network.chain?.id,
+                }
+              : undefined
+          )
         : null,
-    [isClient, network.chain?.id, account.address]
+    [isClient, network.chain, account.address]
   )
 }
